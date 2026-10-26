@@ -15,6 +15,9 @@ const covers = new Map(
     .map(f => [f.replace(/\.[^.]+$/, '').toLowerCase(), f]),
 );
 
+// badges.json: a short label over a book's cover, by book id ("jk": "На вычитке")
+const badges = (() => { try { return JSON.parse(readFileSync(join(root, 'badges.json'), 'utf8')); } catch { return {}; } })();
+
 const unescape = s => s
   .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
   .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
@@ -55,6 +58,7 @@ function book(file) {
     ...(text(tag(info, 'date')) ? { year: text(tag(info, 'date')) } : {}),
     ...(description ? { description } : {}),
     ...(cover ? { cover: `covers/${cover}` } : {}),
+    ...(badges[id] ? { badge: String(badges[id]) } : {}),
     size,
     pageCount: Math.max(1, Math.round(chars / 1850)),
     // For the showcase site
