@@ -2,9 +2,12 @@
 // Run by .github/workflows/catalog.yml after every push; by hand: node scripts/build-catalog.mjs
 // Everything comes from the fb2 files themselves (title, author, series, date, annotation),
 // and the cover from covers/<name>.jpg (or .png/.webp) when there is one.
+// The same file feeds the showcase site (lscnsk/library), which reads the fields coverUrl,
+// fileSize, annotation, genres and path; the app reads cover, size and description.
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+const RAW = 'https://raw.githubusercontent.com/lscnsk/lscnsk_library/main';
 const root = new URL('..', import.meta.url).pathname;
 const covers = new Map(
   (() => { try { return readdirSync(join(root, 'covers')); } catch { return []; } })()
@@ -38,6 +41,9 @@ function book(file) {
   const body = xml.match(/<body[\s\S]*<\/body>/i)?.[0] || '';
   const chars = unescape(body.replace(/<[^>]+>/g, '')).length;
   const cover = covers.get(id.toLowerCase());
+  const genres = [...info.matchAll(/<genre[^>]*>([\s\S]*?)<\/genre>/gi)].map(([, g]) => text(g)).filter(Boolean);
+  const size = statSync(join(root, file)).size;
+  const lang = text(tag(info, 'lang'));
 
   return {
     id,
@@ -49,8 +55,16 @@ function book(file) {
     ...(text(tag(info, 'date')) ? { year: text(tag(info, 'date')) } : {}),
     ...(description ? { description } : {}),
     ...(cover ? { cover: `covers/${cover}` } : {}),
-    size: statSync(join(root, file)).size,
+    size,
     pageCount: Math.max(1, Math.round(chars / 1850)),
+    // For the showcase site
+    path: file,
+    format: 'fb2',
+    fileSize: size,
+    genres,
+    ...(description ? { annotation: description } : {}),
+    ...(cover ? { coverUrl: `${RAW}/covers/${encodeURIComponent(cover)}` } : {}),
+    ...(lang ? { language: lang } : {}),
   };
 }
 
