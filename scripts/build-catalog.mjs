@@ -6,6 +6,7 @@
 // fileSize, annotation, genres and path; the app reads cover, size and description.
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { createHash } from 'node:crypto';
 
 const RAW = 'https://raw.githubusercontent.com/lscnsk/lscnsk_library/main';
 const root = new URL('..', import.meta.url).pathname;
@@ -67,6 +68,8 @@ function book(file) {
     ...(samplers[id] ? { sampler: String(samplers[id]) } : {}),
     ...(samplerOf[id] ? { samplerFor: samplerOf[id] } : {}),
     size,
+    // Changes whenever the file does: the app offers the new edition to readers who downloaded the book
+    edition: createHash('sha1').update(raw).digest('hex').slice(0, 12),
     pageCount: Math.max(1, Math.round(chars / 1850)),
     // For the showcase site
     path: file,
