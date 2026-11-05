@@ -18,6 +18,11 @@ const covers = new Map(
 // badges.json: a short label over a book's cover, by book id ("jk": "На вычитке")
 const badges = (() => { try { return JSON.parse(readFileSync(join(root, 'badges.json'), 'utf8')); } catch { return {}; } })();
 
+// samplers.json: a short book to start with, offered before the main one, by book id
+// ("fr": "ff" means "Флэпперы и философы" is the sampler of "По эту сторону рая")
+const samplers = (() => { try { return JSON.parse(readFileSync(join(root, 'samplers.json'), 'utf8')); } catch { return {}; } })();
+const samplerOf = Object.fromEntries(Object.entries(samplers).map(([main, sampler]) => [sampler, main]));
+
 const unescape = s => s
   .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
   .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
@@ -59,6 +64,8 @@ function book(file) {
     ...(description ? { description } : {}),
     ...(cover ? { cover: `covers/${cover}` } : {}),
     ...(badges[id] ? { badge: String(badges[id]) } : {}),
+    ...(samplers[id] ? { sampler: String(samplers[id]) } : {}),
+    ...(samplerOf[id] ? { samplerFor: samplerOf[id] } : {}),
     size,
     pageCount: Math.max(1, Math.round(chars / 1850)),
     // For the showcase site
