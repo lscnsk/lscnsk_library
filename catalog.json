@@ -34,12 +34,12 @@
       "description": "Роман Александра Беляева «Голова профессора Доуэля» в редакции 1937 года.",
       "cover": "covers/ad.jpg",
       "samplerFor": "ab",
-      "size": 708237,
-      "edition": "94ac6d7c3d26",
+      "size": 703453,
+      "edition": "1ff8b280e838",
       "pageCount": 139,
       "path": "ad.fb2",
       "format": "fb2",
-      "fileSize": 708237,
+      "fileSize": 703453,
       "genres": [
         "sf_classic"
       ],
