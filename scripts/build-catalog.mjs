@@ -24,6 +24,10 @@ const badges = (() => { try { return JSON.parse(readFileSync(join(root, 'badges.
 const samplers = (() => { try { return JSON.parse(readFileSync(join(root, 'samplers.json'), 'utf8')); } catch { return {}; } })();
 const samplerOf = Object.fromEntries(Object.entries(samplers).map(([main, sampler]) => [sampler, main]));
 
+// hidden.json: ids of books kept in the repository but left out of the catalog (["vk", "mp"])
+const hidden = new Set((() => { try { return JSON.parse(readFileSync(join(root, 'hidden.json'), 'utf8')); } catch { return []; } })()
+  .map(id => String(id).toLowerCase()));
+
 const unescape = s => s
   .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
   .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
@@ -65,8 +69,8 @@ function book(file) {
     ...(description ? { description } : {}),
     ...(cover ? { cover: `covers/${cover}` } : {}),
     ...(badges[id] ? { badge: String(badges[id]) } : {}),
-    ...(samplers[id] ? { sampler: String(samplers[id]) } : {}),
-    ...(samplerOf[id] ? { samplerFor: samplerOf[id] } : {}),
+    ...(samplers[id] && !hidden.has(String(samplers[id]).toLowerCase()) ? { sampler: String(samplers[id]) } : {}),
+    ...(samplerOf[id] && !hidden.has(samplerOf[id].toLowerCase()) ? { samplerFor: samplerOf[id] } : {}),
     size,
     // Changes whenever the file does: the app offers the new edition to readers who downloaded the book
     edition: createHash('sha1').update(raw).digest('hex').slice(0, 12),
@@ -82,6 +86,7 @@ function book(file) {
   };
 }
 
-const books = readdirSync(root).filter(f => /\.fb2$/i.test(f)).sort().map(book);
+const books = readdirSync(root).filter(f => /\.fb2$/i.test(f))
+  .filter(f => !hidden.has(f.replace(/\.fb2$/i, '').toLowerCase())).sort().map(book);
 writeFileSync(join(root, 'catalog.json'), JSON.stringify({ version: 1, books }, null, 2) + '\n');
 console.log(`catalog.json: ${books.length} books`);
