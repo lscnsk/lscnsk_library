@@ -1,5 +1,6 @@
 # After every push, rebuilds catalog.json (the list of books the CoolRead app reads)
-# and commits it if anything changed. To add a book, just upload the fb2 and its cover.
+# and telegram/ (the books cut into messages for the Telegram bot), and commits them
+# if anything changed. To add a book, just upload the fb2 and its cover.
 name: Update catalog
 on:
   push:
@@ -19,13 +20,14 @@ jobs:
         with:
           node-version: 22
       - run: node scripts/build-catalog.mjs
-      - name: Commit catalog.json
+      - run: node scripts/build-telegram.mjs
+      - name: Commit catalog.json and telegram/
         run: |
-          if git diff --quiet -- catalog.json && git ls-files --error-unmatch catalog.json >/dev/null 2>&1; then
+          git add -A catalog.json telegram
+          if git diff --cached --quiet; then
             echo "No changes"; exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898+github-actions[bot]@users.noreply.github.com"
-          git add catalog.json
           git commit -m "Update catalog.json"
           git push
